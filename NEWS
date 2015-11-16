@@ -33,6 +33,8 @@ Post-v2.5.0
        arguments. Additional arguments can be passed via the dpdk-extra
        entry.
      * Add ingress policing functionality.
+     * Basic connection tracking for the userspace datapath (no ALG,
+       fragmentation or NAT support yet)
    - ovs-benchmark: This utility has been removed due to lack of use and
      bitrot.
    - ovs-appctl:
