@@ -219,7 +219,8 @@ static void learned_cookies_flush(struct ofproto *, struct ovs_list *dead_cookie
 /* ofport. */
 static void ofport_destroy__(struct ofport *) OVS_EXCLUDED(ofproto_mutex);
 static void ofport_destroy(struct ofport *, bool del);
-static inline bool ofport_is_internal(const struct ofport *);
+static inline bool ofport_is_internal(const struct ofproto *,
+                                      const struct ofport *);
 
 static int update_port(struct ofproto *, const char *devname);
 static int init_ports(struct ofproto *);
@@ -2448,7 +2449,7 @@ static void
 ofport_remove(struct ofport *ofport)
 {
     struct ofproto *p = ofport->ofproto;
-    bool is_internal = ofport_is_internal(ofport);
+    bool is_internal = ofport_is_internal(p, ofport);
 
     connmgr_send_port_status(ofport->ofproto->connmgr, NULL, &ofport->pp,
                              OFPPR_DELETE);
@@ -2734,9 +2735,10 @@ init_ports(struct ofproto *p)
 }
 
 static inline bool
-ofport_is_internal(const struct ofport *port)
+ofport_is_internal(const struct ofproto *p, const struct ofport *port)
 {
-    return !strcmp(netdev_get_type(port->netdev), "internal");
+    return !strcmp(netdev_get_type(port->netdev),
+                   ofproto_port_open_type(p->type, "internal"));
 }
 
 /* Find the minimum MTU of all non-datapath devices attached to 'p'.
@@ -2753,7 +2755,7 @@ find_min_mtu(struct ofproto *p)
 
         /* Skip any internal ports, since that's what we're trying to
          * set. */
-        if (ofport_is_internal(ofport)) {
+        if (ofport_is_internal(p, ofport)) {
             continue;
         }
 
@@ -2780,7 +2782,7 @@ update_mtu(struct ofproto *p, struct ofport *port)
         port->mtu = 0;
         return;
     }
-    if (ofport_is_internal(port)) {
+    if (ofport_is_internal(p, port)) {
         if (dev_mtu > p->min_mtu) {
            if (!netdev_set_mtu(port->netdev, p->min_mtu)) {
                dev_mtu = p->min_mtu;
@@ -2810,7 +2812,7 @@ update_mtu_ofproto(struct ofproto *p)
     HMAP_FOR_EACH (ofport, hmap_node, &p->ports) {
         struct netdev *netdev = ofport->netdev;
 
-        if (ofport_is_internal(ofport)) {
+        if (ofport_is_internal(p, ofport)) {
             if (!netdev_set_mtu(netdev, p->min_mtu)) {
                 ofport->mtu = p->min_mtu;
             }
