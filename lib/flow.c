@@ -2253,8 +2253,6 @@ flow_compose_l4(struct dp_packet *p, const struct flow *flow)
             icmp = dp_packet_put_zeros(p, l4_len);
             icmp->icmp_type = ntohs(flow->tp_src);
             icmp->icmp_code = ntohs(flow->tp_dst);
-            /* Checksum has already been zeroed by put_zeros call. */
-            icmp->icmp_csum = csum(icmp, ICMP_HEADER_LEN);
         } else if (flow->nw_proto == IPPROTO_IGMP) {
             struct igmp_header *igmp;
 
@@ -2263,8 +2261,6 @@ flow_compose_l4(struct dp_packet *p, const struct flow *flow)
             igmp->igmp_type = ntohs(flow->tp_src);
             igmp->igmp_code = ntohs(flow->tp_dst);
             put_16aligned_be32(&igmp->group, flow->igmp_group_ip4);
-            /* Checksum has already been zeroed by put_zeros call. */
-            igmp->igmp_csum = csum(igmp, IGMP_HEADER_LEN);
         } else if (flow->nw_proto == IPPROTO_ICMPV6) {
             struct icmp6_hdr *icmp;
 
@@ -2298,11 +2294,54 @@ flow_compose_l4(struct dp_packet *p, const struct flow *flow)
                     nd_opt->nd_opt_mac = flow->arp_tha;
                 }
             }
-            icmp->icmp6_cksum = (OVS_FORCE uint16_t)
-                csum(icmp, (char *)dp_packet_tail(p) - (char *)icmp);
         }
     }
     return l4_len;
+}
+
+static void
+flow_compose_l4_csum(struct dp_packet *p, const struct flow *flow,
+                     uint32_t pseudo_hdr_csum)
+{
+    size_t l4_len = (char *) dp_packet_tail(p) - (char *) dp_packet_l4(p);
+
+    if (!(flow->nw_frag & FLOW_NW_FRAG_ANY)
+        || !(flow->nw_frag & FLOW_NW_FRAG_LATER)) {
+        if (flow->nw_proto == IPPROTO_TCP) {
+            struct tcp_header *tcp = dp_packet_l4(p);
+
+            /* Checksum has already been zeroed by put_zeros call in
+             * flow_compose_l4(). */
+            tcp->tcp_csum = csum_finish(csum_continue(pseudo_hdr_csum,
+                                                      tcp, l4_len));
+        } else if (flow->nw_proto == IPPROTO_UDP) {
+            struct udp_header *udp = dp_packet_l4(p);
+
+            /* Checksum has already been zeroed by put_zeros call in
+             * flow_compose_l4(). */
+            udp->udp_csum = csum_finish(csum_continue(pseudo_hdr_csum,
+                                                      udp, l4_len));
+        } else if (flow->nw_proto == IPPROTO_ICMP) {
+            struct icmp_header *icmp = dp_packet_l4(p);
+
+            /* Checksum has already been zeroed by put_zeros call in
+             * flow_compose_l4(). */
+            icmp->icmp_csum = csum(icmp, l4_len);
+        } else if (flow->nw_proto == IPPROTO_IGMP) {
+            struct igmp_header *igmp = dp_packet_l4(p);
+
+            /* Checksum has already been zeroed by put_zeros call in
+             * flow_compose_l4(). */
+            igmp->igmp_csum = csum(igmp, l4_len);
+        } else if (flow->nw_proto == IPPROTO_ICMPV6) {
+            struct icmp6_hdr *icmp = dp_packet_l4(p);
+
+            /* Checksum has already been zeroed by put_zeros call in
+             * flow_compose_l4(). */
+            icmp->icmp6_cksum = (OVS_FORCE uint16_t)
+                csum_finish(csum_continue(pseudo_hdr_csum, icmp, l4_len));
+        }
+    }
 }
 
 /* Puts into 'b' a packet that flow_extract() would parse as having the given
@@ -2314,6 +2353,7 @@ flow_compose_l4(struct dp_packet *p, const struct flow *flow)
 void
 flow_compose(struct dp_packet *p, const struct flow *flow)
 {
+    uint32_t pseudo_hdr_csum;
     size_t l4_len;
 
     /* eth_compose() sets l3 pointer and makes sure it is 32-bit aligned. */
@@ -2354,6 +2394,9 @@ flow_compose(struct dp_packet *p, const struct flow *flow)
         ip->ip_tot_len = htons(p->l4_ofs - p->l3_ofs + l4_len);
         /* Checksum has already been zeroed by put_zeros call. */
         ip->ip_csum = csum(ip, sizeof *ip);
+
+        pseudo_hdr_csum = packet_csum_pseudoheader(ip);
+        flow_compose_l4_csum(p, flow, pseudo_hdr_csum);
     } else if (flow->dl_type == htons(ETH_TYPE_IPV6)) {
         struct ovs_16aligned_ip6_hdr *nh;
 
@@ -2372,6 +2415,9 @@ flow_compose(struct dp_packet *p, const struct flow *flow)
 
         nh = dp_packet_l3(p);
         nh->ip6_plen = htons(l4_len);
+
+        pseudo_hdr_csum = packet_csum_pseudoheader6(nh);
+        flow_compose_l4_csum(p, flow, pseudo_hdr_csum);
     } else if (flow->dl_type == htons(ETH_TYPE_ARP) ||
                flow->dl_type == htons(ETH_TYPE_RARP)) {
         struct arp_eth_header *arp;
