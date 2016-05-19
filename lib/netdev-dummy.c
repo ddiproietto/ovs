@@ -617,7 +617,7 @@ dummy_netdev_get_conn_state(struct dummy_packet_conn *conn)
 }
 
 static void
-netdev_dummy_run(void)
+netdev_dummy_run(const struct netdev_class *netdev_class OVS_UNUSED)
 {
     struct netdev_dummy *dev;
 
@@ -631,7 +631,7 @@ netdev_dummy_run(void)
 }
 
 static void
-netdev_dummy_wait(void)
+netdev_dummy_wait(const struct netdev_class *netdev_class OVS_UNUSED)
 {
     struct netdev_dummy *dev;
 
