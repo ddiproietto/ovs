@@ -169,6 +169,8 @@ test_pcap(struct ovs_cmdl_context *ctx)
         }
     }
 
+    fatal_signal_init();
+
     conntrack_init(&ct);
     total_count = 0;
     for (;;) {
