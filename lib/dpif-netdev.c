@@ -4194,7 +4194,7 @@ dp_execute_cb(void *aux_, struct dp_packet_batch *packets_,
             }
         }
 
-        conntrack_execute(&dp->conntrack, packets, cnt, commit, zone,
+        conntrack_execute(&dp->conntrack, packets_, commit, zone,
                           setmark, setlabel, helper);
         break;
     }
