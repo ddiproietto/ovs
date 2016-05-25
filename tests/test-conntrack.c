@@ -150,8 +150,7 @@ test_benchmark(struct ovs_cmdl_context *ctx)
 static void
 test_pcap(struct ovs_cmdl_context *ctx)
 {
-    struct dp_packet *pkts[NETDEV_MAX_BURST];
-    size_t total_count, i, pkt_count, batch_size;
+    size_t total_count, i, batch_size;
     FILE *pcap;
     int err;
 
@@ -173,34 +172,40 @@ test_pcap(struct ovs_cmdl_context *ctx)
     conntrack_init(&ct);
     total_count = 0;
     for (;;) {
+        struct dp_packet_batch pkt_batch;
+
+        dp_packet_batch_init(&pkt_batch);
+
         for (i = 0; i < batch_size; i++) {
             struct flow dummy_flow;
 
-            err = ovs_pcap_read(pcap, &pkts[i], NULL);
+            err = ovs_pcap_read(pcap, &pkt_batch.packets[i], NULL);
             if (err) {
                 break;
             }
-            flow_extract(pkts[i], &dummy_flow);
+            flow_extract(pkt_batch.packets[i], &dummy_flow);
         }
 
-        pkt_count = i;
-        if (pkt_count == 0) {
+        pkt_batch.count = i;
+        if (pkt_batch.count == 0) {
             break;
         }
 
-        conntrack_execute(&ct, pkts, pkt_count, true, 0, NULL, NULL, NULL);
+        conntrack_execute(&ct, &pkt_batch, true, 0, NULL, NULL, NULL);
 
-        for (i = 0; i < pkt_count; i++) {
+        for (i = 0; i < pkt_batch.count; i++) {
             struct ds ds = DS_EMPTY_INITIALIZER;
+            struct dp_packet *pkt = pkt_batch.packets[i];
 
             total_count++;
 
-            format_flags(&ds, ct_state_to_string, pkts[i]->md.ct_state, '|');
+            format_flags(&ds, ct_state_to_string, pkt->md.ct_state, '|');
             printf("%"PRIuSIZE": %s\n", total_count, ds_cstr(&ds));
 
-            dp_packet_delete(pkts[i]);
             ds_destroy(&ds);
         }
+
+        dp_packet_delete_batch(&pkt_batch, true);
         if (err) {
             break;
         }
