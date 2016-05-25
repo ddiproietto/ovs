@@ -218,6 +218,8 @@ process_one(struct conntrack *ct, struct dp_packet *pkt,
                 delete_conn(conn);
                 conn = conn_not_found(ct, pkt, ctx, &state, commit, now);
                 break;
+            default:
+                OVS_NOT_REACHED();
             }
         }
     } else {
