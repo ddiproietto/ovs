@@ -1142,8 +1142,7 @@ conntrack_dump_next(struct conntrack_dump *dump, struct ct_dpif_entry *entry)
             struct conn *conn;
 
             node = hmap_at_position(&ct->buckets[dump->bucket].connections,
-                                    &dump->inner_bucket,
-                                    &dump->inner_offset);
+                                    &dump->bucket_pos);
             if (!node) {
                 break;
             }
@@ -1158,8 +1157,7 @@ conntrack_dump_next(struct conntrack_dump *dump, struct ct_dpif_entry *entry)
         ct_lock_unlock(&ct->buckets[dump->bucket].lock);
 
         if (!node) {
-            dump->inner_bucket = 0;
-            dump->inner_offset = 0;
+            memset(&dump->bucket_pos, 0, sizeof dump->bucket_pos);
             dump->bucket++;
         } else {
             return 0;

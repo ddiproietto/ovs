@@ -72,8 +72,7 @@ int conntrack_execute(struct conntrack *, struct dp_packet_batch *,
 struct conntrack_dump {
     struct conntrack *ct;
     unsigned bucket;
-    uint32_t inner_bucket;
-    uint32_t inner_offset;
+    struct hmap_position bucket_pos;
     bool filter_zone;
     uint16_t zone;
 };
