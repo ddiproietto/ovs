@@ -25,9 +25,6 @@
 #include "openvswitch/types.h"
 #include "ovs-atomic.h"
 
-
-struct dp_packet;
-
 /* Userspace connection tracker
  * ============================
  *
@@ -58,13 +55,15 @@ struct dp_packet;
  * conntrack_execute() can be called by multiple threads simultaneoulsy.
  */
 
+struct dp_packet_batch;
+
 struct conntrack;
 
 void conntrack_init(struct conntrack *);
 void conntrack_run(struct conntrack *);
 void conntrack_destroy(struct conntrack *);
 
-int conntrack_execute(struct conntrack *, struct dp_packet **, size_t,
+int conntrack_execute(struct conntrack *, struct dp_packet_batch *,
                       bool commit, uint16_t zone, const uint32_t *setmark,
                       const struct ovs_key_ct_labels *setlabel,
                       const char *helper);

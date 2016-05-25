@@ -232,17 +232,22 @@ process_one(struct conntrack *ct, struct dp_packet *pkt,
     return conn;
 }
 
-/* Sends a group of 'cnt' packets ('pkts') through the connection tracker
- * 'ct'.  If 'commit' is true, the packets are allowed to create new entries
- * in the connection tables.  'setmark', if not NULL, should point to a two
+/* Sends the packets in '*pkt_batch' through the connection tracker 'ct'.  All
+ * the packets should have the same 'dl_type' (IPv4 or IPv6) and should have
+ * the l3 and and l4 offset properly set.
+ * 
+ * If 'commit' is true, the packets are allowed to create new entries in the
+ * connection tables.  'setmark', if not NULL, should point to a two
  * elements array containing a value and a mask to set the connection mark.
  * 'setlabel' behaves similarly for the connection label.*/
 int
-conntrack_execute(struct conntrack *ct, struct dp_packet **pkts, size_t cnt,
+conntrack_execute(struct conntrack *ct, struct dp_packet_batch *pkt_batch,
                   bool commit, uint16_t zone, const uint32_t *setmark,
                   const struct ovs_key_ct_labels *setlabel,
                   const char *helper)
 {
+    struct dp_packet **pkts = pkt_batch->packets;
+    size_t cnt = pkt_batch->count;
 #if !defined(__CHECKER__) && !defined(_WIN32)
     const size_t KEY_ARRAY_SIZE = cnt;
 #else
