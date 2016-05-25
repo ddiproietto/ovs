@@ -28,41 +28,43 @@
 static const char payload[] = "50540000000a50540000000908004500001c0000000000"
                               "11a4cd0a0101010a0101020001000200080000";
 
-static struct dp_packet **
+static struct dp_packet_batch *
 prepare_packets(size_t n, bool change, unsigned tid)
 {
-    struct dp_packet **pkts = xcalloc(n, sizeof *pkts);
+    struct dp_packet_batch *pkt_batch = xzalloc(sizeof *pkt_batch);
     struct flow flow;
     size_t i;
 
+    ovs_assert(n <= ARRAY_SIZE(pkt_batch->packets));
+
+    dp_packet_batch_init(pkt_batch);
+    pkt_batch->count = n;
+
     for (i = 0; i < n; i++) {
         struct udp_header *udp;
+        struct dp_packet *pkt = dp_packet_new(sizeof payload/2);
 
-        pkts[i] = dp_packet_new(sizeof payload/2);
-        dp_packet_put_hex(pkts[i], payload, NULL);
-        flow_extract(pkts[i], &flow);
+        dp_packet_put_hex(pkt, payload, NULL);
+        flow_extract(pkt, &flow);
 
-        udp = dp_packet_l4(pkts[i]);
+        udp = dp_packet_l4(pkt);
         udp->udp_src = htons(ntohs(udp->udp_src) + tid);
 
         if (change) {
             udp->udp_dst = htons(ntohs(udp->udp_dst) + i);
         }
+
+        pkt_batch->packets[i] = pkt;
     }
 
-    return pkts;
+    return pkt_batch;
 }
 
 static void
-destroy_packets(struct dp_packet **pkts, size_t n)
+destroy_packets(struct dp_packet_batch *pkt_batch)
 {
-    size_t i;
-
-    for (i = 0; i < n; i++) {
-        dp_packet_delete(pkts[i]);
-    }
-
-    free(pkts);
+    dp_packet_delete_batch(pkt_batch, true);
+    free(pkt_batch);
 }
 
 struct thread_aux {
@@ -79,16 +81,16 @@ static void *
 ct_thread_main(void *aux_)
 {
     struct thread_aux *aux = aux_;
-    struct dp_packet **pkts;
+    struct dp_packet_batch *pkt_batch;
     size_t i;
 
-    pkts = prepare_packets(batch_size, change_conn, aux->tid);
+    pkt_batch = prepare_packets(batch_size, change_conn, aux->tid);
     pthread_barrier_wait(&barrier);
     for (i = 0; i < n_pkts; i += batch_size) {
-        conntrack_execute(&ct, pkts, batch_size, true, 0, NULL, NULL, NULL);
+        conntrack_execute(&ct, pkt_batch, true, 0, NULL, NULL, NULL);
     }
     pthread_barrier_wait(&barrier);
-    destroy_packets(pkts, batch_size);
+    destroy_packets(pkt_batch);
 
     return NULL;
 }
