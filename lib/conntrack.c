@@ -85,7 +85,7 @@ long long ct_timeout_val[] = {
  * are accepted */
 #define DEFAULT_N_CONN_LIMIT 3000000
 
-/* Initializes the connection tracker 'ct'.  The caller is responbile for
+/* Initializes the connection tracker 'ct'.  The caller is responsibile for
  * calling 'conntrack_destroy()', when the instance is not needed anymore */
 void
 conntrack_init(struct conntrack *ct)

@@ -173,9 +173,9 @@ tcp_conn_update(struct conn* conn_, struct dp_packet *pkt, bool reply,
         return CT_UPDATE_INVALID;
     }
 
-    if (((tcp_flags & (TCP_SYN|TCP_ACK)) == TCP_SYN) &&
-            dst->state >= CT_DPIF_TCPS_FIN_WAIT_2 &&
-            src->state >= CT_DPIF_TCPS_FIN_WAIT_2) {
+    if (((tcp_flags & (TCP_SYN|TCP_ACK)) == TCP_SYN)
+            && dst->state >= CT_DPIF_TCPS_FIN_WAIT_2
+            && src->state >= CT_DPIF_TCPS_FIN_WAIT_2) {
         src->state = dst->state = CT_DPIF_TCPS_CLOSED;
         return CT_UPDATE_NEW;
     }
@@ -219,8 +219,7 @@ tcp_conn_update(struct conn* conn_, struct dp_packet *pkt, bool reply,
                     dws = dst->wscale & CT_WSCALE_MASK;
                 } else {
                     /* fixup other window */
-                    dst->max_win <<= dst->wscale &
-                        CT_WSCALE_MASK;
+                    dst->max_win <<= dst->wscale & CT_WSCALE_MASK;
                     /* in case of a retrans SYN|ACK */
                     dst->wscale = 0;
                 }
@@ -237,8 +236,8 @@ tcp_conn_update(struct conn* conn_, struct dp_packet *pkt, bool reply,
          * the crappy stack check or if we picked up the connection
          * after establishment)
          */
-        if (src->seqhi == 1 ||
-                SEQ_GEQ(end + MAX(1, dst->max_win << dws), src->seqhi)) {
+        if (src->seqhi == 1
+                || SEQ_GEQ(end + MAX(1, dst->max_win << dws), src->seqhi)) {
             src->seqhi = end + MAX(1, dst->max_win << dws);
         }
         if (win > src->max_win) {
