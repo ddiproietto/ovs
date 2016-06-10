@@ -2339,6 +2339,7 @@ AT_CLEANUP
 
 AT_SETUP([conntrack - DNAT load balancing])
 CHECK_CONNTRACK()
+CHECK_CONNTRACK_NAT()
 OVS_TRAFFIC_VSWITCHD_START()
 
 ADD_NAMESPACES(at_ns1, at_ns2, at_ns3, at_ns4)
@@ -2425,6 +2426,7 @@ AT_CLEANUP
 
 AT_SETUP([conntrack - DNAT load balancing with NC])
 CHECK_CONNTRACK()
+CHECK_CONNTRACK_NAT()
 OVS_TRAFFIC_VSWITCHD_START()
 
 ADD_NAMESPACES(at_ns1, at_ns2, at_ns3, at_ns4, at_ns5)
