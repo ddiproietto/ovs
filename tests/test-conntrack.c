@@ -75,7 +75,7 @@ struct thread_aux {
 static struct conntrack ct;
 static unsigned long n_threads, n_pkts, batch_size;
 static bool change_conn = false;
-static pthread_barrier_t barrier;
+static struct ovs_barrier barrier;
 
 static void *
 ct_thread_main(void *aux_)
@@ -85,11 +85,11 @@ ct_thread_main(void *aux_)
     size_t i;
 
     pkt_batch = prepare_packets(batch_size, change_conn, aux->tid);
-    pthread_barrier_wait(&barrier);
+    ovs_barrier_block(&barrier);
     for (i = 0; i < n_pkts; i += batch_size) {
         conntrack_execute(&ct, pkt_batch, true, 0, NULL, NULL, NULL);
     }
-    pthread_barrier_wait(&barrier);
+    ovs_barrier_block(&barrier);
     destroy_packets(pkt_batch);
 
     return NULL;
@@ -120,7 +120,7 @@ test_benchmark(struct ovs_cmdl_context *ctx)
     }
 
     threads = xcalloc(n_threads, sizeof *threads);
-    pthread_barrier_init(&barrier, NULL, n_threads + 1);
+    ovs_barrier_init(&barrier, n_threads + 1);
     conntrack_init(&ct);
 
     /* Create threads */
@@ -130,11 +130,11 @@ test_benchmark(struct ovs_cmdl_context *ctx)
                                               &threads[i]);
     }
     /* Starts the work inside the threads */
-    pthread_barrier_wait(&barrier);
+    ovs_barrier_block(&barrier);
     start = time_msec();
 
     /* Wait for the threads to finish the work */
-    pthread_barrier_wait(&barrier);
+    ovs_barrier_block(&barrier);
     printf("conntrack:  %5lld ms\n", time_msec() - start);
 
     for (i = 0; i < n_threads; i++) {
@@ -142,7 +142,7 @@ test_benchmark(struct ovs_cmdl_context *ctx)
     }
 
     conntrack_destroy(&ct);
-    pthread_barrier_destroy(&barrier);
+    ovs_barrier_destroy(&barrier);
     free(threads);
 }
 
