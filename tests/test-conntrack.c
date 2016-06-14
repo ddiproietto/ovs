@@ -160,7 +160,7 @@ pcap_batch_execute_conntrack(struct conntrack *ct,
 
     dp_packet_batch_init(&new_batch);
 
-    /* pkt_batch contains packets with different 'dl_type'. We have to 
+    /* pkt_batch contains packets with different 'dl_type'. We have to
      * call conntrack_execute() on packets with the same 'dl_type'. */
 
     for (i = 0; i < pkt_batch->count; i++) {
