@@ -42,6 +42,7 @@ struct ct_endpoint {
     ovs_be16 port;
 };
 
+/* Changes to this structure need to be reflected in conn_key_hash() */
 struct conn_key {
     struct ct_endpoint src;
     struct ct_endpoint dst;

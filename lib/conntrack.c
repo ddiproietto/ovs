@@ -38,7 +38,7 @@
 
 VLOG_DEFINE_THIS_MODULE(conntrack);
 
-COVERAGE_DEFINE(conntrack_new_full);
+COVERAGE_DEFINE(conntrack_full);
 
 struct conn_lookup_ctx {
     struct conn_key key;
@@ -85,7 +85,7 @@ long long ct_timeout_val[] = {
  * are accepted */
 #define DEFAULT_N_CONN_LIMIT 3000000
 
-/* Initializes the connection tracker 'ct'.  The caller is responsibile for
+/* Initializes the connection tracker 'ct'.  The caller is responsible for
  * calling 'conntrack_destroy()', when the instance is not needed anymore */
 void
 conntrack_init(struct conntrack *ct)
@@ -166,7 +166,7 @@ conn_not_found(struct conntrack *ct, struct dp_packet *pkt,
         atomic_read_relaxed(&ct->n_conn_limit, &n_conn_limit);
 
         if (atomic_count_get(&ct->n_conn) >= n_conn_limit) {
-            COVERAGE_INC(conntrack_new_full);
+            COVERAGE_INC(conntrack_full);
             return nc;
         }
 
@@ -235,7 +235,7 @@ process_one(struct conntrack *ct, struct dp_packet *pkt,
 /* Sends the packets in '*pkt_batch' through the connection tracker 'ct'.  All
  * the packets should have the same 'dl_type' (IPv4 or IPv6) and should have
  * the l3 and and l4 offset properly set.
- * 
+ *
  * If 'commit' is true, the packets are allowed to create new entries in the
  * connection tables.  'setmark', if not NULL, should point to a two
  * elements array containing a value and a mask to set the connection mark.
@@ -573,7 +573,6 @@ extract_l4_icmp(struct conn_key *key, const void *data, size_t size,
         if (!related) {
             return false;
         }
-        *related = true;
 
         memset(&inner_key, 0, sizeof inner_key);
         inner_key.dl_type = htons(ETH_TYPE_IP);
@@ -595,6 +594,7 @@ extract_l4_icmp(struct conn_key *key, const void *data, size_t size,
         ok = extract_l4(key, l4, tail - l4, NULL, l3);
         if (ok) {
             conn_key_reverse(key);
+            *related = true;
         }
         return ok;
     }
@@ -643,7 +643,6 @@ extract_l4_icmp6(struct conn_key *key, const void *data, size_t size,
         if (!related) {
             return false;
         }
-        *related = true;
 
         memset(&inner_key, 0, sizeof inner_key);
         inner_key.dl_type = htons(ETH_TYPE_IPV6);
@@ -667,6 +666,7 @@ extract_l4_icmp6(struct conn_key *key, const void *data, size_t size,
         ok = extract_l4(key, l4, tail - l4, NULL, l3);
         if (ok) {
             conn_key_reverse(key);
+            *related = true;
         }
         return ok;
     }

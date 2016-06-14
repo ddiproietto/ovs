@@ -173,9 +173,9 @@ tcp_conn_update(struct conn* conn_, struct dp_packet *pkt, bool reply,
         return CT_UPDATE_INVALID;
     }
 
-    if (((tcp_flags & (TCP_SYN|TCP_ACK)) == TCP_SYN)
-            && dst->state >= CT_DPIF_TCPS_FIN_WAIT_2
-            && src->state >= CT_DPIF_TCPS_FIN_WAIT_2) {
+    if (((tcp_flags & (TCP_SYN | TCP_ACK)) == TCP_SYN)
+        && dst->state >= CT_DPIF_TCPS_FIN_WAIT_2
+        && src->state >= CT_DPIF_TCPS_FIN_WAIT_2) {
         src->state = dst->state = CT_DPIF_TCPS_CLOSED;
         return CT_UPDATE_NEW;
     }
@@ -188,8 +188,8 @@ tcp_conn_update(struct conn* conn_, struct dp_packet *pkt, bool reply,
         dws = dst->wscale & CT_WSCALE_MASK;
 
     } else if (src->wscale & CT_WSCALE_UNKNOWN
-        && dst->wscale & CT_WSCALE_UNKNOWN
-        && !(tcp_flags & TCP_SYN)) {
+               && dst->wscale & CT_WSCALE_UNKNOWN
+               && !(tcp_flags & TCP_SYN)) {
 
         sws = TCP_MAX_WSCALE;
         dws = TCP_MAX_WSCALE;

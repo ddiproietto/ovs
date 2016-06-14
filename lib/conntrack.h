@@ -33,7 +33,7 @@
  * Usage
  * =====
  *
- *     struct conntract ct;
+ *     struct conntrack ct;
  *
  * Initialization:
  *
