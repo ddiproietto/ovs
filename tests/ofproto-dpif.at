@@ -8271,10 +8271,10 @@ AT_CHECK([ovs-appctl netdev-dummy/receive p2 'in_port(2),eth(src=50:54:00:00:00:
 
 
 AT_CHECK([cat ovs-vswitchd.log | strip_ufid | filter_flow_install], [0], [dnl
-recirc_id=0,ct_state=-trk,udp,in_port=2,vlan_tci=0x0000,nw_frag=no, actions:ct,recirc(0x1)
-recirc_id=0,udp,in_port=1,vlan_tci=0x0000,nw_frag=no, actions:ct(commit),2
-recirc_id=0x1,ct_state=+new-est+trk,ip,in_port=2,vlan_tci=0x0000,nw_frag=no, actions:drop
-recirc_id=0x1,ct_state=-new+est+trk,udp,in_port=2,vlan_tci=0x0000,nw_frag=no, actions:1
+ct_state(+new-est+trk),recirc_id(0x1),in_port(2),eth_type(0x0800),ipv4(frag=no), actions:drop
+ct_state(-new+est+trk),recirc_id(0x1),in_port(2),eth_type(0x0800),ipv4(proto=17,frag=no), actions:1
+ct_state(-trk),recirc_id(0),in_port(2),eth_type(0x0800),ipv4(proto=17,frag=no), actions:ct,recirc(0x1)
+recirc_id(0),in_port(1),eth_type(0x0800),ipv4(proto=17,frag=no), actions:ct(commit),2
 ])
 
 OVS_VSWITCHD_STOP
@@ -8628,9 +8628,9 @@ AT_CHECK([ovs-appctl netdev-dummy/receive p1 'in_port(1),eth(src=50:54:00:00:00:
 AT_CHECK([ovs-appctl netdev-dummy/receive p2 'in_port(2),eth(src=50:54:00:00:00:0a,dst=50:54:00:00:00:09),eth_type(0x0800),ipv4(src=10.1.1.2,dst=10.1.1.1,proto=17,tos=0,ttl=64,frag=no),udp(src=2,dst=1)'])
 
 AT_CHECK([cat ovs-vswitchd.log | strip_ufid | filter_flow_install], [0], [dnl
-recirc_id=0,ct_state=-trk,ip,in_port=2,vlan_tci=0x0000,nw_frag=no, actions:ct,recirc(0x1)
-recirc_id=0,ct_state=-trk,udp,in_port=1,vlan_tci=0x0000,nw_frag=no,tp_src=1, actions:ct(commit,label=0x1),2
-recirc_id=0x1,ct_state=+rpl+trk,ct_label=0x1,ip,in_port=2,vlan_tci=0x0000,nw_frag=no, actions:1
+ct_state(+rpl+trk),ct_label(0x1),recirc_id(0x1),in_port(2),eth_type(0x0800),ipv4(frag=no), actions:1
+ct_state(-trk),recirc_id(0),in_port(1),eth_type(0x0800),ipv4(proto=17,frag=no),udp(src=1), actions:ct(commit,label=0x1),2
+ct_state(-trk),recirc_id(0),in_port(2),eth_type(0x0800),ipv4(frag=no), actions:ct,recirc(0x1)
 ])
 
 OVS_VSWITCHD_STOP
@@ -8654,7 +8654,7 @@ dnl Start a new connection from port 1.
 AT_CHECK([ovs-appctl netdev-dummy/receive p1 'in_port(1),eth(src=50:54:00:00:00:09,dst=50:54:00:00:00:0a),eth_type(0x0800),ipv4(src=10.1.1.1,dst=10.1.1.2,proto=17,tos=0,ttl=64,frag=no),udp(src=1,dst=2)'])
 
 AT_CHECK([cat ovs-vswitchd.log | strip_ufid | filter_flow_install], [0], [dnl
-recirc_id=0,udp,in_port=1,vlan_tci=0x0000,nw_frag=no, actions:ct(commit)
+recirc_id(0),in_port(1),eth_type(0x0800),ipv4(proto=17,frag=no), actions:ct(commit)
 ])
 
 OVS_VSWITCHD_STOP
