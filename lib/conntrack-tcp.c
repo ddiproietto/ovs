@@ -487,7 +487,7 @@ tcp_conn_get_protoinfo(const struct conn *conn_,
     protoinfo->tcp.wscale_reply = conn->peer[1].wscale & CT_WSCALE_MASK;
 
     protoinfo->tcp.flags_orig = tcp_peer_to_protoinfo_flags(&conn->peer[0]);
-    protoinfo->tcp.flags_reply = tcp_peer_to_protoinfo_flags(&conn->peer[0]);
+    protoinfo->tcp.flags_reply = tcp_peer_to_protoinfo_flags(&conn->peer[1]);
 }
 
 struct ct_l4_proto ct_proto_tcp = {
