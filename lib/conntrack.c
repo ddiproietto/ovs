@@ -41,6 +41,7 @@
 VLOG_DEFINE_THIS_MODULE(conntrack);
 
 COVERAGE_DEFINE(conntrack_full);
+COVERAGE_DEFINE(conntrack_long_cleanup);
 
 struct conn_lookup_ctx {
     struct conn_key key;
@@ -386,6 +387,7 @@ sweep_bucket(struct conntrack *ct, struct conntrack_bucket *ctb, long long now,
                 min_expiration = MIN(min_expiration, conn->expiration);
                 if (count >= limit) {
                     /* Do not check other lists. */
+                    COVERAGE_INC(conntrack_long_cleanup);
                     return min_expiration;
                 }
                 break;

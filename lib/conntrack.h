@@ -118,6 +118,10 @@ static inline void ct_lock_destroy(struct ct_lock *lock)
  * interval between two rounds of cleanup of expired entries */
 #define CT_TM_MIN (30 * 1000)
 
+#define CT_TIMEOUT(NAME, VAL) BUILD_ASSERT_DECL(VAL >= CT_TM_MIN);
+    CT_TIMEOUTS
+#undef CT_TIMEOUT
+
 enum ct_timeout {
 #define CT_TIMEOUT(NAME, VALUE) CT_TM_##NAME,
     CT_TIMEOUTS
@@ -133,14 +137,14 @@ enum ct_timeout {
  * Each bucket has two locks. Acquisition order is, from outermost to
  * innermost:
  *
- *    lock
  *    cleanup_mutex
+ *    lock
  *
  * */
 struct conntrack_bucket {
     /* Protects 'connections' and 'exp_lists'.  Used in the fast path */
     struct ct_lock lock;
-    /* Contains the connections in the bucket, indexed by key */
+    /* Contains the connections in the bucket, indexed by 'struct conn_key' */
     struct hmap connections OVS_GUARDED;
     /* For each possible timeout we have a list of connections. When the
      * timeout of a connection is updated, we move it to the back of the list.
