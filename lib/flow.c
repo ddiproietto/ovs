@@ -2348,8 +2348,7 @@ flow_compose_l4_csum(struct dp_packet *p, const struct flow *flow,
  * 'flow'.
  *
  * (This is useful only for testing, obviously, and the packet isn't really
- * valid. It hasn't got some checksums filled in, for one, and lots of fields
- * are just zeroed.) */
+ * valid.  Lots of fields are just zeroed.) */
 void
 flow_compose(struct dp_packet *p, const struct flow *flow)
 {
