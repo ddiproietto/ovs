@@ -673,9 +673,7 @@ table=1,priority=1,action=drop
 
 AT_CHECK([ovs-ofctl --bundle add-flows br0 flows.txt])
 
-dnl Without this sleep, we get occasional failures due to the following error:
-dnl "connect: Cannot assign requested address"
-sleep 2;
+OVS_WAIT_UNTIL([ip netns exec at_ns0 ping6 -c 1 fc00::2])
 
 dnl Pings from ns1->ns0 should fail.
 NS_CHECK_EXEC([at_ns1], [ping6 -q -c 3 -i 0.3 -w 2 fc00::1 | FORMAT_PING], [0], [dnl
