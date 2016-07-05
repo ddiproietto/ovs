@@ -2851,6 +2851,14 @@ pmd_thread_main(void *f_)
     ovs_numa_thread_setaffinity_core(pmd->core_id);
     dpdk_set_lcore_id(pmd->core_id);
     poll_cnt = pmd_load_queues_and_ports(pmd, &poll_list);
+
+    /* Set pmd thread's scheduling policy to SCHED_RR and priority to
+     * highest priority of SCHED_RR policy, In absence of pmd-cpu-mask (or)
+     * pmd-cpu-mask=1, default scheduling policy and priority shall
+     * apply to pmd thread */
+     if (pmd->core_id) {
+         pmd_thread_setpriority(SCHED_RR);
+     }
 reload:
     emc_cache_init(&pmd->flow_cache);
 

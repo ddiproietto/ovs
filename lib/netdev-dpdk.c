@@ -3457,3 +3457,17 @@ dpdk_thread_is_pmd(void)
 {
     return rte_lcore_id() != NON_PMD_CORE_ID;
 }
+
+void
+pmd_thread_setpriority(int policy)
+{
+    struct sched_param threadparam;
+    int err;
+
+    memset(&threadparam, 0, sizeof(threadparam));
+    threadparam.sched_priority = sched_get_priority_max(policy);
+    err = pthread_setschedparam(pthread_self(), policy, &threadparam);
+    if (err) {
+        VLOG_WARN("Thread priority error %d",err);
+    }
+}

@@ -26,6 +26,7 @@ struct smap;
 void netdev_dpdk_register(void);
 void free_dpdk_buf(struct dp_packet *);
 void dpdk_set_lcore_id(unsigned cpu);
+void pmd_thread_setpriority(int policy);
 
 #else
 
@@ -47,6 +48,12 @@ free_dpdk_buf(struct dp_packet *buf OVS_UNUSED)
 
 static inline void
 dpdk_set_lcore_id(unsigned cpu OVS_UNUSED)
+{
+    /* Nothing */
+}
+
+static inline void
+pmd_thread_setpriority(int policy OVS_UNUSED)
 {
     /* Nothing */
 }
