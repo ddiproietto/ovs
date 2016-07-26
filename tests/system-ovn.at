@@ -2,6 +2,7 @@ AT_SETUP([ovn -- 2 LRs connected via LS, gateway router, NAT])
 AT_KEYWORDS([ovnnat])
 
 CHECK_CONNTRACK()
+CHECK_CONNTRACK_NAT()
 ovn_start
 OVS_TRAFFIC_VSWITCHD_START()
 ADD_BR([br-int])
@@ -173,6 +174,7 @@ AT_SETUP([ovn -- load-balancing])
 AT_KEYWORDS([ovnlb])
 
 CHECK_CONNTRACK()
+CHECK_CONNTRACK_NAT()
 ovn_start
 OVS_TRAFFIC_VSWITCHD_START()
 ADD_BR([br-int])
