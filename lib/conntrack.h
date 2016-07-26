@@ -19,8 +19,8 @@
 
 #include <stdbool.h>
 
-#include "hmap.h"
 #include "odp-netlink.h"
+#include "openvswitch/hmap.h"
 #include "openvswitch/thread.h"
 #include "openvswitch/types.h"
 #include "ovs-atomic.h"

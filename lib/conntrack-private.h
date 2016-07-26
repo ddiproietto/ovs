@@ -22,7 +22,7 @@
 #include <netinet/ip6.h>
 
 #include "conntrack.h"
-#include "hmap.h"
+#include "openvswitch/hmap.h"
 #include "openvswitch/list.h"
 #include "openvswitch/types.h"
 #include "packets.h"
