@@ -165,7 +165,7 @@ struct emc_cache {
 #define DPCLS_OPTIMIZATION_INTERVAL 1000
 
 struct dpcls {
-    struct cmap_node node;      /* Within dp_netdev_pmd_thread.classifier */
+    struct cmap_node node;      /* Within dp_netdev_pmd_thread.classifiers */
     odp_port_t in_port;
     struct cmap subtables_map;
     struct pvector subtables;
@@ -2001,7 +2001,7 @@ dp_netdev_pmd_lookup_flow(struct dp_netdev_pmd_thread *pmd,
 {
     struct dpcls *cls;
     struct dpcls_rule *rule;
-    odp_port_t in_port = MINIFLOW_GET_U32(&key->mf, in_port);
+    odp_port_t in_port = u32_to_odp(MINIFLOW_GET_U32(&key->mf, in_port));
     struct dp_netdev_flow *netdev_flow = NULL;
 
     cls = dp_netdev_pmd_lookup_dpcls(pmd, in_port);
@@ -2261,7 +2261,7 @@ dp_netdev_flow_add(struct dp_netdev_pmd_thread *pmd,
     netdev_flow_key_init_masked(&flow->cr.flow, &match->flow, &mask);
 
     /* Select dpcls for in_port. Relies on in_port to be exact match */
-    ovs_assert(match->wc.masks.in_port.odp_port == UINT32_MAX);
+    ovs_assert(match->wc.masks.in_port.odp_port == ODP_PORT_C(UINT32_MAX));
     cls = dp_netdev_pmd_find_dpcls(pmd, in_port);
     dpcls_insert(cls, &flow->cr, &mask);
 
