@@ -117,6 +117,13 @@ netdev_is_pmd(const struct netdev *netdev)
     return netdev->netdev_class->is_pmd;
 }
 
+bool
+netdev_has_tunnel_push_pop(const struct netdev *netdev)
+{
+    return netdev->netdev_class->push_header
+           && netdev->netdev_class->pop_header;
+}
+
 static void
 netdev_initialize(void)
     OVS_EXCLUDED(netdev_mutex)
@@ -686,6 +693,9 @@ netdev_set_tx_multiq(struct netdev *netdev, unsigned int n_txq)
  * if a partial packet was transmitted or if a packet is too big or too small
  * to transmit on the device.
  *
+ * The caller must make sure that 'netdev' supports sending by making sure that
+ * 'netdev_n_txq(netdev)' returns >= 1.
+ *
  * If the function returns a non-zero value, some of the packets might have
  * been sent anyway.
  *
@@ -710,11 +720,6 @@ int
 netdev_send(struct netdev *netdev, int qid, struct dp_packet_batch *batch,
             bool may_steal, bool concurrent_txq)
 {
-    if (!netdev->netdev_class->send) {
-        dp_packet_delete_batch(batch, may_steal);
-        return EOPNOTSUPP;
-    }
-
     int error = netdev->netdev_class->send(netdev, qid, batch, may_steal,
                                            concurrent_txq);
     if (!error) {
