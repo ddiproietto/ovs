@@ -278,10 +278,15 @@ enum pmd_cycles_counter_type {
 
 #define XPS_TIMEOUT_MS 500LL
 
+#define RXQ_CORE_UNPINNED NON_PMD_CORE_ID
+
 /* Contained by struct dp_netdev_port's 'rxqs' member.  */
 struct dp_netdev_rxq {
     struct netdev_rxq *rxq;
-    unsigned core_id;           /* Сore to which this queue is pinned. */
+    unsigned core_id;                  /* Core to which this queue should be
+                                          pinned. RXQ_CORE_UNPINNED if the
+                                          queue doesn't need to be pinned to a
+                                          particular core. */
 };
 
 /* A port in a netdev-based datapath. */
@@ -1301,7 +1306,7 @@ port_create(const char *devname, const char *type,
                      devname, ovs_strerror(errno));
             goto out_rxq_close;
         }
-        port->rxqs[i].core_id = -1;
+        port->rxqs[i].core_id = RXQ_CORE_UNPINNED;
         n_open_rxqs++;
     }
 
@@ -2745,7 +2750,7 @@ parse_affinity_list(const char *affinity_list, unsigned *core_ids, int n_rxq)
     int error = 0;
 
     for (i = 0; i < n_rxq; i++) {
-        core_ids[i] = -1;
+        core_ids[i] = RXQ_CORE_UNPINNED;
     }
 
     if (!affinity_list) {
@@ -3670,7 +3675,7 @@ dp_netdev_add_port_rx_to_pmds(struct dp_netdev *dp,
 
     for (i = 0; i < port->n_rxq; i++) {
         if (pinned) {
-            if (port->rxqs[i].core_id == -1) {
+            if (port->rxqs[i].core_id == RXQ_CORE_UNPINNED) {
                 continue;
             }
             pmd = dp_netdev_get_pmd(dp, port->rxqs[i].core_id);
@@ -3684,7 +3689,7 @@ dp_netdev_add_port_rx_to_pmds(struct dp_netdev *dp,
             pmd->isolated = true;
             dp_netdev_pmd_unref(pmd);
         } else {
-            if (port->rxqs[i].core_id != -1) {
+            if (port->rxqs[i].core_id != RXQ_CORE_UNPINNED) {
                 continue;
             }
             pmd = dp_netdev_less_loaded_pmd_on_numa(dp, numa_id);
