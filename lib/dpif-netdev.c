@@ -506,15 +506,14 @@ struct dp_netdev_pmd_thread {
     struct hmap tx_ports OVS_GUARDED;
 
     /* These are thread-local copies of 'tx_ports'.  One contains only tunnel
-     * ports (that support push_tunnel/pop_tunnel)  The other contains
-     * non-tunnel ports (that support send).
+     * ports (that support push_tunnel/pop_tunnel), the other contains ports
+     * with at least one txq (that support send).  A port can be in both.
      *
-     * These are kept separate to make sure that we don't try to execute
-     * OUTPUT on a tunnel device (which has 0 txqs) or PUSH/POP on a non-tunnel
-     * device.
+     * There are two separate maps to make sure that we don't try to execute
+     * OUTPUT on a device which has 0 txqs or PUSH/POP on a non-tunnel device.
      *
-     * The instance for cpu core NON_PMD_CORE_ID can be accessed by multiple
-     * threads, and thusly needs to be protected by 'non_pmd_mutex'.  Every
+     * The instances for cpu core NON_PMD_CORE_ID can be accessed by multiple
+     * threads, and thusly need to be protected by 'non_pmd_mutex'.  Every
      * other instance will only be accessed by its own pmd thread. */
     struct hmap tnl_port_cache;
     struct hmap send_port_cache;
@@ -3085,19 +3084,17 @@ pmd_load_cached_ports(struct dp_netdev_pmd_thread *pmd)
     hmap_shrink(&pmd->tnl_port_cache);
 
     HMAP_FOR_EACH (tx_port, node, &pmd->tx_ports) {
-        struct hmap *cache;
-
         if (netdev_has_tunnel_push_pop(tx_port->port->netdev)) {
-            cache = &pmd->tnl_port_cache;
-        } else if (netdev_n_txq(tx_port->port->netdev)) {
-            cache = &pmd->send_port_cache;
-        } else {
-            continue;
+            tx_port_cached = xmemdup(tx_port, sizeof *tx_port_cached);
+            hmap_insert(&pmd->tnl_port_cache, &tx_port_cached->node,
+                        hash_port_no(tx_port_cached->port->port_no));
         }
 
-        tx_port_cached = xmemdup(tx_port, sizeof *tx_port_cached);
-        hmap_insert(cache, &tx_port_cached->node,
-                    hash_port_no(tx_port_cached->port->port_no));
+        if (netdev_n_txq(tx_port->port->netdev)) {
+            tx_port_cached = xmemdup(tx_port, sizeof *tx_port_cached);
+            hmap_insert(&pmd->send_port_cache, &tx_port_cached->node,
+                        hash_port_no(tx_port_cached->port->port_no));
+        }
     }
 }
 

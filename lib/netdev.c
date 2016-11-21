@@ -731,17 +731,16 @@ netdev_send(struct netdev *netdev, int qid, struct dp_packet_batch *batch,
     return error;
 }
 
+/* Pop tunnel header, build tunnel metadata and resize 'batch->packets'
+ * for further processing.
+ *
+ * The caller must make sure that 'netdev' support this operation by checking
+ * that netdev_has_tunnel_push_pop() returns true. */
 void
 netdev_pop_header(struct netdev *netdev, struct dp_packet_batch *batch)
 {
     int i, n_cnt = 0;
     struct dp_packet **buffers = batch->packets;
-
-    if (!netdev->netdev_class->pop_header) {
-        dp_packet_delete_batch(batch, true);
-        batch->count = 0;
-        return;
-    }
 
     for (i = 0; i < batch->count; i++) {
         buffers[i] = netdev->netdev_class->pop_header(buffers[i]);
@@ -776,16 +775,17 @@ int netdev_build_header(const struct netdev *netdev,
     return EOPNOTSUPP;
 }
 
+/* Push tunnel header (reading from tunnel metadata) and resize
+ * 'batch->packets' for further processing.
+ *
+ * The caller must make sure that 'netdev' support this operation by checking
+ * that netdev_has_tunnel_push_pop() returns true. */
 int
 netdev_push_header(const struct netdev *netdev,
                    struct dp_packet_batch *batch,
                    const struct ovs_action_push_tnl *data)
 {
     int i;
-
-    if (!netdev->netdev_class->push_header) {
-        return -EINVAL;
-    }
 
     for (i = 0; i < batch->count; i++) {
         netdev->netdev_class->push_header(batch->packets[i], data);
