@@ -3153,6 +3153,7 @@ reload:
             seq_wait(pmd->reload_seq, pmd->last_reload_seq);
             poll_block();
         }
+        lc = 1025;
     }
 
     for (;;) {
