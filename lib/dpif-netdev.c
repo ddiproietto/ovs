@@ -3074,8 +3074,10 @@ rxq_scheduling(struct dp_netdev *dp, bool pinned) OVS_REQUIRES(dp->port_mutex)
                 }
             } else if (!pinned && q->core_id == RXQ_CORE_UNPINNED) {
                 if (!numa) {
-                    VLOG_WARN("There's no available pmd thread on numa node"
-                              " %d", numa_id);
+                    VLOG_WARN("There's no available (non isolated) pmd thread"
+                              "on numa node %d. Queue %d on port \'%s\' will"
+                              "not be polled.",
+                              numa_id, qid, netdev_get_name(port->netdev));
                 } else {
                     q->pmd = rr_numa_get_pmd(numa);
                 }
