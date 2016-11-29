@@ -3336,7 +3336,7 @@ reconfigure_datapath(struct dp_netdev *dp)
 
             if (q->pmd) {
                 ovs_mutex_lock(&q->pmd->port_mutex);
-                dp_netdev_add_rxq_to_pmd(q->pmd, &port->rxqs[qid]);
+                dp_netdev_add_rxq_to_pmd(q->pmd, q);
                 ovs_mutex_unlock(&q->pmd->port_mutex);
             }
         }
