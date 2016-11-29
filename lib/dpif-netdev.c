@@ -3180,6 +3180,35 @@ reload_all_pmds(struct dp_netdev *dp)
     }
 }
 
+static void
+pmd_remove_stale_ports(struct dp_netdev *dp,
+                       struct dp_netdev_pmd_thread *pmd)
+    OVS_EXCLUDED(pmd->port_mutex)
+    OVS_REQUIRES(dp->port_mutex)
+{
+    struct rxq_poll *poll, *poll_next;
+    struct tx_port *tx, *tx_next;
+
+    ovs_mutex_lock(&pmd->port_mutex);
+    HMAP_FOR_EACH_SAFE(poll, poll_next, node, &pmd->poll_list) {
+        struct dp_netdev_port *port = poll->rxq->port;
+
+        if (port->need_reconfigure
+            || dp_netdev_lookup_port(dp, port->port_no) != port) {
+            dp_netdev_del_rxq_from_pmd(pmd, poll);
+        }
+    }
+    HMAP_FOR_EACH_SAFE(tx, tx_next, node, &pmd->tx_ports) {
+        struct dp_netdev_port *port = tx->port;
+
+        if (port->need_reconfigure
+            || dp_netdev_lookup_port(dp, port->port_no) != port) {
+            dp_netdev_del_port_tx_from_pmd(pmd, tx);
+        }
+    }
+    ovs_mutex_unlock(&pmd->port_mutex);
+}
+
 /* Must be called each time a port is added/removed or the cmask changes.
  * This creates and destroys pmd threads, reconfigures ports, opens their
  * rxqs and assigns all rxqs/txqs to pmd threads. */
@@ -3220,26 +3249,7 @@ reconfigure_datapath(struct dp_netdev *dp)
     /* Remove from the pmd threads all the ports that have been deleted or
      * need reconfiguration. */
     CMAP_FOR_EACH(pmd, node, &dp->poll_threads) {
-        struct rxq_poll *poll, *poll_next;
-        struct tx_port *tx, *tx_next;
-
-        ovs_mutex_lock(&pmd->port_mutex);
-        HMAP_FOR_EACH_SAFE(poll, poll_next, node, &pmd->poll_list) {
-            port = poll->rxq->port;
-
-            if (port->need_reconfigure
-                || dp_netdev_lookup_port(dp, port->port_no) != port) {
-                dp_netdev_del_rxq_from_pmd(pmd, poll);
-            }
-        }
-        HMAP_FOR_EACH_SAFE(tx, tx_next, node, &pmd->tx_ports) {
-            port = tx->port;
-            if (port->need_reconfigure
-                || dp_netdev_lookup_port(dp, port->port_no) != port) {
-                dp_netdev_del_port_tx_from_pmd(pmd, tx);
-            }
-        }
-        ovs_mutex_unlock(&pmd->port_mutex);
+        pmd_remove_stale_ports(dp, pmd);
     }
 
     /* Reload affected pmd threads.  We must wait for the pmd threads before
