@@ -3050,11 +3050,15 @@ rxq_scheduling(struct dp_netdev *dp, bool pinned) OVS_REQUIRES(dp->port_mutex)
     rr_numa_list_populate(dp, &rr);
 
     HMAP_FOR_EACH(port, node, &dp->ports) {
+        struct rr_numa *numa;
+        int numa_id;
+
         if (!netdev_is_pmd(port->netdev)) {
             continue;
         }
-        int numa_id = netdev_get_numa_id(port->netdev);
-        struct rr_numa *numa = rr_numa_list_lookup(&rr, numa_id);
+
+        numa_id = netdev_get_numa_id(port->netdev);
+        numa = rr_numa_list_lookup(&rr, numa_id);
 
         for (int qid = 0; qid < port->n_rxq; qid++) {
             struct dp_netdev_rxq *q = &port->rxqs[qid];
