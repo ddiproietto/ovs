@@ -3168,7 +3168,7 @@ reconfigure_pmd_threads(struct dp_netdev *dp)
 }
 
 static void
-reload_all_pmds(struct dp_netdev *dp)
+reload_affected_pmds(struct dp_netdev *dp)
 {
     struct dp_netdev_pmd_thread *pmd;
 
@@ -3255,7 +3255,7 @@ reconfigure_datapath(struct dp_netdev *dp)
     /* Reload affected pmd threads.  We must wait for the pmd threads before
      * reconfiguring the ports, because a port cannot be reconfigured while
      * it's being used. */
-    reload_all_pmds(dp);
+    reload_affected_pmds(dp);
 
     /* Step 3: Reconfigure ports. */
 
@@ -3319,7 +3319,7 @@ reconfigure_datapath(struct dp_netdev *dp)
     /* Reload affected pmd threads.  We must wait for the pmd threads to remove
      * the old queues before readding them, otherwise a queue can be polled by
      * two threads at the same time. */
-    reload_all_pmds(dp);
+    reload_affected_pmds(dp);
 
     /* Step 6: Add queues from scheduling, if they're not there already. */
     HMAP_FOR_EACH(port, node, &dp->ports) {
@@ -3349,7 +3349,7 @@ reconfigure_datapath(struct dp_netdev *dp)
     }
 
     /* Reload affected pmd threads. */
-    reload_all_pmds(dp);
+    reload_affected_pmds(dp);
 }
 
 /* Returns true if one of the netdevs in 'dp' requires a reconfiguration */
