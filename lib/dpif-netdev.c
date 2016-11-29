@@ -3074,6 +3074,7 @@ rxq_scheduling(struct dp_netdev *dp, bool pinned) OVS_REQUIRES(dp->port_mutex)
                 } else {
                     q->pmd = pmd;
                     pmd->isolated = true;
+                    dp_netdev_pmd_unref(pmd);
                 }
             } else if (!pinned && q->core_id == RXQ_CORE_UNPINNED) {
                 if (!numa) {
