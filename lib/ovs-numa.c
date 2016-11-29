@@ -512,21 +512,6 @@ ovs_numa_dump_cores_on_numa(int numa_id)
     return dump;
 }
 
-static struct cpu_core *
-get_cpu_core(int core_id)
-{
-    struct cpu_core *core;
-
-    HMAP_FOR_EACH_WITH_HASH(core, hmap_node, hash_int(core_id, 0),
-                            &all_cpu_cores) {
-        if (core->core_id == core_id) {
-            return core;
-        }
-    }
-
-    return NULL;
-}
-
 struct ovs_numa_dump *
 ovs_numa_dump_cores_with_cmask(const char *cmask)
 {
@@ -557,7 +542,7 @@ ovs_numa_dump_cores_with_cmask(const char *cmask)
 
         for (j = 0; j < 4; j++) {
             if ((bin >> j) & 0x1) {
-                struct cpu_core *core = get_cpu_core(core_id);
+                struct cpu_core *core = get_core_by_core_id(core_id);
 
                 if (core) {
                     struct ovs_numa_info *info = xmalloc(sizeof *info);
