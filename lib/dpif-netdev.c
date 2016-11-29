@@ -3070,8 +3070,7 @@ rxq_scheduling(struct dp_netdev *dp, bool pinned) OVS_REQUIRES(dp->port_mutex)
                 if (!pmd) {
                     VLOG_WARN("There is no PMD thread on core %d. Queue "
                               "%d on port \'%s\' will not be polled.",
-                              port->rxqs[qid].core_id, qid,
-                              netdev_get_name(port->netdev));
+                              q->core_id, qid, netdev_get_name(port->netdev));
                 } else {
                     q->pmd = pmd;
                     pmd->isolated = true;
