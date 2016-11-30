@@ -3098,7 +3098,6 @@ reconfigure_pmd_threads(struct dp_netdev *dp)
 {
     struct dp_netdev_pmd_thread *pmd;
     struct ovs_numa_dump *pmd_cores;
-    struct ovs_numa_info_core *core;
     bool changed = false;
 
     /* The pmd threads should be started only if there's a pmd port in the
@@ -3112,30 +3111,26 @@ reconfigure_pmd_threads(struct dp_netdev *dp)
         pmd_cores = ovs_numa_dump_n_cores_per_numa(NR_PMD_THREADS);
     }
 
-    /* Check for unwanted pmd threads */
-    CMAP_FOR_EACH(pmd, node, &dp->poll_threads) {
-        if (pmd->core_id != NON_PMD_CORE_ID &&
-            !ovs_numa_dump_contains_core(pmd_cores,
-                                         pmd->numa_id,
-                                         pmd->core_id)) {
-            changed = true;
-        }
-    }
-
-    /* Check for required new pmd threads */
-    FOR_EACH_CORE_ON_DUMP(core, pmd_cores) {
-        pmd = dp_netdev_get_pmd(dp, core->core_id);
-        if (pmd) {
-            dp_netdev_pmd_unref(pmd);
-            continue;
-        }
+    /* Check for changed configuration */
+    if (ovs_numa_dump_count(pmd_cores) != cmap_count(&dp->poll_threads) - 1) {
         changed = true;
+    } else {
+        CMAP_FOR_EACH(pmd, node, &dp->poll_threads) {
+            if (pmd->core_id != NON_PMD_CORE_ID
+                && !ovs_numa_dump_contains_core(pmd_cores,
+                                                pmd->numa_id,
+                                                pmd->core_id)) {
+                changed = true;
+                break;
+            }
+        }
     }
 
     /* Destroy the old and recreate the new pmd threads.  We don't perform an
      * incremental update because we would have to adjust 'static_tx_qid'. */
     if (changed) {
         struct ovs_numa_dump *all_numas;
+        struct ovs_numa_info_core *core;
         struct ovs_numa_info_core *numa;
 
         /* Do not destroy the non pmd thread. */
