@@ -3282,18 +3282,16 @@ reconfigure_datapath(struct dp_netdev *dp)
      * for now, we just update the 'pmd' pointer in each rxq to point to the
      * wanted thread according to the scheduling policy. */
 
-    /* Reset all the pmd threads to non isolated and all the queues to
-     * unassigned. */
+    /* Reset all the pmd threads to non isolated. */
     CMAP_FOR_EACH(pmd, node, &dp->poll_threads) {
-        struct rxq_poll *poll;
-
-        ovs_mutex_lock(&pmd->port_mutex);
-        HMAP_FOR_EACH(poll, node, &pmd->poll_list) {
-            poll->rxq->pmd = NULL;
-        }
-        ovs_mutex_unlock(&pmd->port_mutex);
-
         pmd->isolated = false;
+    }
+
+    /* Reset all the queues to unassigned */
+    HMAP_FOR_EACH(port, node, &dp->ports) {
+        for (int i = 0; i < port->n_rxq; i++) {
+            port->rxqs[i].pmd = NULL;
+        }
     }
 
     /* Add pinned queues and mark pmd threads isolated. */
