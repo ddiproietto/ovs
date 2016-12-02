@@ -3336,13 +3336,15 @@ reconfigure_datapath(struct dp_netdev *dp)
     }
 
     /* Add every port to the tx cache of every pmd thread, if it's not
-     * there already. */
-    HMAP_FOR_EACH(port, node, &dp->ports) {
-        CMAP_FOR_EACH(pmd, node, &dp->poll_threads) {
-            ovs_mutex_lock(&pmd->port_mutex);
-            dp_netdev_add_port_tx_to_pmd(pmd, port);
-            ovs_mutex_unlock(&pmd->port_mutex);
+     * there already and if this pmd has at least one rxq to poll. */
+    CMAP_FOR_EACH(pmd, node, &dp->poll_threads) {
+        ovs_mutex_lock(&pmd->port_mutex);
+        if (hmap_count(&pmd->poll_list) || pmd->core_id == NON_PMD_CORE_ID) {
+            HMAP_FOR_EACH(port, node, &dp->ports) {
+                dp_netdev_add_port_tx_to_pmd(pmd, port);
+            }
         }
+        ovs_mutex_unlock(&pmd->port_mutex);
     }
 
     /* Reload affected pmd threads. */
