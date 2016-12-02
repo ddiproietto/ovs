@@ -532,10 +532,17 @@ ovs_numa_dump_cores_with_cmask(const char *cmask)
 {
     struct ovs_numa_dump *dump = xmalloc(sizeof *dump);
     int core_id = 0;
+    int end_idx;
 
     hmap_init(&dump->dump);
 
-    for (int i = strlen(cmask) - 1; i >= 0; i--) {
+    /* Ignore leading 0x. */
+    end_idx = 0;
+    if (!strncmp(cmask, "0x", 2) || !strncmp(cmask, "0X", 2)) {
+        end_idx = 2;
+    }
+
+    for (int i = strlen(cmask) - 1; i >= end_idx; i--) {
         char hex = toupper((unsigned char) cmask[i]);
         int bin, j;
 
