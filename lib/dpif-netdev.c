@@ -3092,7 +3092,7 @@ reconfigure_pmd_threads(struct dp_netdev *dp)
 {
     struct dp_netdev_pmd_thread *pmd;
     struct ovs_numa_dump *pmd_cores;
-    struct ovs_numa_info *core;
+    struct ovs_numa_info_core *core;
     bool changed = false;
 
     /* The pmd threads should be started only if there's a pmd port in the
@@ -3130,7 +3130,7 @@ reconfigure_pmd_threads(struct dp_netdev *dp)
      * incremental update because we would have to adjust 'static_tx_qid'. */
     if (changed) {
         struct ovs_numa_dump *all_numas;
-        struct ovs_numa_info *numa;
+        struct ovs_numa_info_core *numa;
 
         /* Do not destroy the non pmd thread. */
         dp_netdev_destroy_all_pmds(dp, false);
